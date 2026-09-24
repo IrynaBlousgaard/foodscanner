@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>FoodScanner v0.1</title>
+<style>
+  :root{
+    --bg:#f7f8f6; --card:#ffffff; --text:#1f2a24; --muted:#6d766f; --line:#e6e9e5;
+    --accent:#2f7d57; --accent2:#e8f3ed; --danger:#a64040; --shadow:0 8px 24px rgba(30,50,40,.08);
+  }
+  *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  button,input,select{font:inherit} button{cursor:pointer}
+  .app{max-width:520px;margin:0 auto;min-height:100vh;padding:18px 16px 92px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.brand{font-size:26px;font-weight:800}.sub{font-size:13px;color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .hero{padding:18px}.hero h2{margin:0 0 6px;font-size:22px}.hero p{margin:0;color:var(--muted)}
+  .primary{width:100%;border:0;border-radius:16px;background:var(--accent);color:#fff;padding:15px 16px;font-weight:700;font-size:16px}
+  .secondary{width:100%;border:1px solid var(--line);border-radius:16px;background:#fff;color:var(--text);padding:14px 16px;font-weight:700}
+  .ghost{border:0;background:transparent;color:var(--accent);font-weight:700;padding:8px}
+  .danger{color:var(--danger)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.quick{min-height:92px;text-align:left}.quick b{display:block;margin-top:8px}.quick span{color:var(--muted);font-size:13px}
+  .sectionTitle{display:flex;justify-content:space-between;align-items:center;margin:18px 2px 10px}.sectionTitle h3{margin:0;font-size:18px}
+  .total{display:grid;grid-template-columns:1.2fr .8fr;gap:10px;align-items:center}.kcal{font-size:34px;font-weight:800}.muted{color:var(--muted)}
+  .macro{display:flex;justify-content:space-between;gap:8px;margin-top:12px}.pill{flex:1;background:#f3f5f2;border-radius:12px;padding:10px;text-align:center;font-size:12px}.pill b{display:block;font-size:15px;margin-top:2px}
+  .list{display:grid;gap:8px}.row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.row b{display:block}.row small{color:var(--muted)}
+  .screen{display:none}.screen.active{display:block}
+  .back{display:inline-flex;align-items:center;gap:5px;margin-bottom:10px}
+  label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}.field{width:100%;padding:13px;border:1px solid var(--line);border-radius:13px;background:#fff}.fields2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ingredient{display:grid;grid-template-columns:1fr 86px 34px;gap:8px;align-items:center;margin-bottom:8px}.ingredient button{border:0;background:#fff;color:var(--danger);font-size:20px}
+  .photoBox{border:1.5px dashed #cfd6d0;border-radius:18px;padding:20px;text-align:center;background:#fbfcfb}.photoBox img{max-width:100%;border-radius:14px;margin-top:12px;display:none}
+  .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line)}.navin{max-width:520px;margin:auto;display:grid;grid-template-columns:repeat(3,1fr);padding:8px 12px calc(8px + env(safe-area-inset-bottom))}.nav button{border:0;background:transparent;padding:8px;color:var(--muted);font-size:12px}.nav button b{display:block;font-size:18px;margin-bottom:2px}.nav button.active{color:var(--accent)}
+  .empty{padding:18px;text-align:center;color:var(--muted)}
+  .recipeCard{display:flex;justify-content:space-between;gap:12px;align-items:center}.recipeCard .meta{font-size:13px;color:var(--muted);margin-top:4px}
+  .tag{font-size:12px;background:var(--accent2);color:var(--accent);padding:5px 8px;border-radius:999px;font-weight:700}
+  .hidden{display:none!important}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1f2a24;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><div><div class="brand">FoodScanner</div><div class="sub">Simple meal tracking</div></div><div>🍏</div></div>
+
+  <section id="home" class="screen active">
+    <div class="card hero">
+      <h2>What did you eat?</h2>
+      <p>Scan it, add a saved recipe, or enter it manually.</p>
+      <div style="height:14px"></div>
+      <button class="primary" onclick="showScreen('scan')">📷 Scan food</button>
+    </div>
+
+    <div class="grid2">
+      <button class="secondary quick" onclick="showScreen('recipeForm');resetRecipeForm()">🍳<b>Add a recipe</b><span>Save homemade dishes</span></button>
+      <button class="secondary quick" onclick="showScreen('recipes')">📖<b>My recipes</b><span>Use again anytime</span></button>
+    </div>
+
+    <div class="sectionTitle"><h3>Today</h3><button class="ghost" onclick="showScreen('today')">View all</button></div>
+    <div class="card">
+      <div class="total"><div><div class="muted">Estimated total</div><div class="kcal" id="homeKcal">0 kcal</div></div><div class="muted" id="mealCount">No meals yet</div></div>
+      <div class="macro"><div class="pill">Protein<b id="homeP">0 g</b></div><div class="pill">Carbs<b id="homeC">0 g</b></div><div class="pill">Fat<b id="homeF">0 g</b></div></div>
+    </div>
+  </section>
+
+  <section id="scan" class="screen">
+    <button class="ghost back" onclick="showScreen('home')">← Back</button>
+    <div class="card">
+      <h2 style="margin-top:0">Scan food</h2>
+      <div class="photoBox">
+        <div>Take a photo or choose one</div>
+        <input id="photo" type="file" accept="image/*" capture="environment" style="margin-top:12px" onchange="previewPhoto(event)">
+        <img id="preview" alt="Meal preview">
+      </div>
+      <div style="height:12px"></div>
+      <button class="primary" onclick="demoAnalyze()">Analyze meal</button>
+      <div id="scanResult" class="hidden" style="margin-top:16px">
+        <div class="muted">Demo estimate — AI connection comes next</div>
+        <div class="row"><div><b>Mixed meal</b><small>Estimated portion</small></div><div><b>520 kcal</b></div></div>
+        <div class="macro"><div class="pill">Protein<b>32 g</b></div><div class="pill">Carbs<b>58 g</b></div><div class="pill">Fat<b>18 g</b></div></div>
+        <div style="height:10px"></div>
+        <button class="secondary" onclick="saveDemoMeal()">Save to today</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="recipes" class="screen">
+    <div class="sectionTitle" style="margin-top:0"><button class="ghost back" onclick="showScreen('home')">← Back</button><button class="ghost" onclick="showScreen('recipeForm');resetRecipeForm()">+ New</button></div>
+    <h2>My recipes</h2>
+    <div id="recipeList" class="list"></div>
+  </section>
+
+  <section id="recipeForm" class="screen">
+    <button class="ghost back" onclick="showScreen('recipes')">← Back</button>
+    <div class="card">
+      <h2 style="margin-top:0">Add a recipe</h2>
+      <label>Recipe name</label><input id="recipeName" class="field" placeholder="e.g. Chicken curry">
+      <div class="fields2"><div><label>Servings</label><input id="servings" type="number" min="1" value="4" class="field"></div><div><label>Cooked weight (optional)</label><input id="cookedWeight" type="number" min="0" class="field" placeholder="grams"></div></div>
+      <div class="sectionTitle"><h3>Ingredients</h3><button class="ghost" onclick="addIngredient()">+ Add</button></div>
+      <div id="ingredients"></div>
+      <div class="muted" style="font-size:12px;margin-top:6px">For v0.1, enter calories and macros for each ingredient manually. Automatic food database lookup can be connected next.</div>
+      <div style="height:14px"></div>
+      <button class="primary" onclick="saveRecipe()">Save recipe</button>
+    </div>
+  </section>
+
+  <section id="recipeView" class="screen">
+    <button class="ghost back" onclick="showScreen('recipes')">← Back</button>
+    <div id="recipeViewContent"></div>
+  </section>
+
+  <section id="today" class="screen">
+    <button class="ghost back" onclick="showScreen('home')">← Back</button>
+    <h2>Today</h2>
+    <div id="todayList" class="list"></div>
+  </section>
+</div>
+
+<div class="nav"><div class="navin">
+  <button id="navHome" class="active" onclick="showScreen('home')"><b>⌂</b>Home</button>
+  <button id="navScan" onclick="showScreen('scan')"><b>📷</b>Scan</button>
+  <button id="navRecipes" onclick="showScreen('recipes')"><b>🍳</b>Recipes</button>
+</div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const store={
+ get(k,d=[]){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},
+ set(k,v){localStorage.setItem(k,JSON.stringify(v))}
+};
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));if(id==='home')$('navHome').classList.add('active');if(id==='scan')$('navScan').classList.add('active');if(id==='recipes'||id==='recipeView'||id==='recipeForm')$('navRecipes').classList.add('active');if(id==='recipes')renderRecipes();if(id==='today')renderToday();if(id==='home')renderHome();window.scrollTo(0,0)}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500)}
+function previewPhoto(e){const f=e.target.files[0];if(!f)return;const u=URL.createObjectURL(f);$('preview').src=u;$('preview').style.display='block'}
+function demoAnalyze(){if(!$('photo').files[0]){toast('Choose a meal photo first');return}$('scanResult').classList.remove('hidden')}
+function saveDemoMeal(){addMeal({name:'Scanned meal',kcal:520,p:32,c:58,f:18,source:'scan'});toast('Meal saved');showScreen('home')}
+function addMeal(m){const meals=store.get('meals',[]);m.id=Date.now();m.date=new Date().toISOString().slice(0,10);meals.push(m);store.set('meals',meals)}
+function todayMeals(){const d=new Date().toISOString().slice(0,10);return store.get('meals',[]).filter(m=>m.date===d)}
+function renderHome(){const ms=todayMeals();const sum=ms.reduce((a,m)=>({k:a.k+(+m.kcal||0),p:a.p+(+m.p||0),c:a.c+(+m.c||0),f:a.f+(+m.f||0)}),{k:0,p:0,c:0,f:0});$('homeKcal').textContent=Math.round(sum.k)+' kcal';$('homeP').textContent=Math.round(sum.p)+' g';$('homeC').textContent=Math.round(sum.c)+' g';$('homeF').textContent=Math.round(sum.f)+' g';$('mealCount').textContent=ms.length?`${ms.length} meal${ms.length>1?'s':''}`:'No meals yet'}
+function addIngredient(data={}){const row=document.createElement('div');row.className='card';row.style.padding='12px';row.innerHTML=`<div class="ingredient"><input class="field ingName" placeholder="Ingredient" value="${data.name||''}"><input class="field ingQty" type="number" min="0" placeholder="g" value="${data.qty||''}"><button onclick="this.closest('.card').remove()">×</button></div><div class="fields2"><input class="field ingKcal" type="number" min="0" placeholder="kcal" value="${data.kcal||''}"><input class="field ingP" type="number" min="0" step="0.1" placeholder="Protein g" value="${data.p||''}"></div><div class="fields2" style="margin-top:8px"><input class="field ingC" type="number" min="0" step="0.1" placeholder="Carbs g" value="${data.c||''}"><input class="field ingF" type="number" min="0" step="0.1" placeholder="Fat g" value="${data.f||''}"></div>`;$('ingredients').appendChild(row)}
+function resetRecipeForm(){$('recipeName').value='';$('servings').value=4;$('cookedWeight').value='';$('ingredients').innerHTML='';addIngredient();addIngredient()}
+function saveRecipe(){const name=$('recipeName').value.trim();if(!name){toast('Add a recipe name');return}const servings=Math.max(1,+$('servings').value||1);const rows=[...$('ingredients').querySelectorAll('.card')];const ingredients=rows.map(r=>({name:r.querySelector('.ingName').value.trim(),qty:+r.querySelector('.ingQty').value||0,kcal:+r.querySelector('.ingKcal').value||0,p:+r.querySelector('.ingP').value||0,c:+r.querySelector('.ingC').value||0,f:+r.querySelector('.ingF').value||0})).filter(x=>x.name);if(!ingredients.length){toast('Add at least one ingredient');return}const recipes=store.get('recipes',[]);recipes.push({id:Date.now(),name,servings,cookedWeight:+$('cookedWeight').value||0,ingredients});store.set('recipes',recipes);toast('Recipe saved');showScreen('recipes')}
+function recipeTotals(r){return r.ingredients.reduce((a,i)=>({k:a.k+i.kcal,p:a.p+i.p,c:a.c+i.c,f:a.f+i.f}),{k:0,p:0,c:0,f:0})}
+function renderRecipes(){const rs=store.get('recipes',[]);const box=$('recipeList');if(!rs.length){box.innerHTML='<div class="card empty">No recipes yet.<br><button class="ghost" onclick="showScreen(\'recipeForm\');resetRecipeForm()">Add your first recipe</button></div>';return}box.innerHTML='';rs.forEach(r=>{const t=recipeTotals(r), per=t.k/r.servings;const c=document.createElement('div');c.className='card recipeCard';c.innerHTML=`<div onclick="openRecipe(${r.id})" style="flex:1"><b>${r.name}</b><div class="meta">${Math.round(per)} kcal per serving · ${r.servings} servings</div></div><span class="tag">Saved</span>`;box.appendChild(c)})}
+function openRecipe(id){const r=store.get('recipes',[]).find(x=>x.id===id);if(!r)return;const t=recipeTotals(r);$('recipeViewContent').innerHTML=`<div class="card"><h2 style="margin-top:0">${r.name}</h2><div class="muted">${r.servings} servings${r.cookedWeight?` · ${r.cookedWeight} g cooked`:''}</div><div class="macro"><div class="pill">Calories<b>${Math.round(t.k/r.servings)}</b></div><div class="pill">Protein<b>${(t.p/r.servings).toFixed(1)} g</b></div><div class="pill">Carbs<b>${(t.c/r.servings).toFixed(1)} g</b></div><div class="pill">Fat<b>${(t.f/r.servings).toFixed(1)} g</b></div></div><label>Amount eaten</label><select id="portion" class="field"><option value="0.5">½ serving</option><option value="1" selected>1 serving</option><option value="1.5">1½ servings</option><option value="2">2 servings</option></select><div style="height:12px"></div><button class="primary" onclick="addRecipeMeal(${r.id})">Add to today</button><div style="height:8px"></div><button class="secondary danger" onclick="deleteRecipe(${r.id})">Delete recipe</button></div><div class="sectionTitle"><h3>Ingredients</h3></div><div class="card">${r.ingredients.map(i=>`<div class="row"><div><b>${i.name}</b><small>${i.qty?i.qty+' g':''}</small></div><div>${Math.round(i.kcal)} kcal</div></div>`).join('')}</div>`;showScreen('recipeView')}
+function addRecipeMeal(id){const r=store.get('recipes',[]).find(x=>x.id===id);const mult=+$('portion').value||1;const t=recipeTotals(r);addMeal({name:r.name,kcal:t.k/r.servings*mult,p:t.p/r.servings*mult,c:t.c/r.servings*mult,f:t.f/r.servings*mult,source:'recipe'});toast('Added to today');showScreen('home')}
+function deleteRecipe(id){store.set('recipes',store.get('recipes',[]).filter(r=>r.id!==id));toast('Recipe deleted');showScreen('recipes')}
+function renderToday(){const ms=todayMeals();const box=$('todayList');if(!ms.length){box.innerHTML='<div class="card empty">Nothing saved today yet.</div>';return}box.innerHTML='';ms.forEach(m=>{const c=document.createElement('div');c.className='card';c.innerHTML=`<div class="row"><div><b>${m.name}</b><small>${m.source==='recipe'?'Saved recipe':'Food scan'}</small></div><div><b>${Math.round(m.kcal)} kcal</b></div></div>`;box.appendChild(c)})}
+resetRecipeForm();renderHome();
+</script>
+</body>
+</html>
