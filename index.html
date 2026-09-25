@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>FoodScanner v0.2</title>
+<title>FoodScanner v0.3</title>
 <style>
   :root{
     --bg:#f7f8f6; --card:#ffffff; --text:#1f2a24; --muted:#6d766f; --line:#e6e9e5;
@@ -66,8 +66,13 @@
     <div class="card">
       <h2 style="margin-top:0">Scan food</h2>
       <div class="photoBox">
-        <div>Take a photo or choose one</div>
-        <input id="photo" type="file" accept="image/*" capture="environment" style="margin-top:12px" onchange="previewPhoto(event)">
+        <div style="font-weight:700;margin-bottom:10px">Add a meal photo</div>
+        <div class="grid2">
+          <button class="secondary" type="button" onclick="document.getElementById('cameraPhoto').click()">📷 Take photo</button>
+          <button class="secondary" type="button" onclick="document.getElementById('galleryPhoto').click()">🖼️ Choose photo</button>
+        </div>
+        <input id="cameraPhoto" type="file" accept="image/*" capture="environment" class="hidden" onchange="previewPhoto(event)">
+        <input id="galleryPhoto" type="file" accept="image/*" class="hidden" onchange="previewPhoto(event)">
         <img id="preview" alt="Meal preview">
       </div>
       <label>Plate size</label>
@@ -145,7 +150,7 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 let currentPhoto='';
 function previewPhoto(e){const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>{currentPhoto=ev.target.result;$('preview').src=currentPhoto;$('preview').style.display='block';$('scanResult').classList.add('hidden')};reader.readAsDataURL(f)}
 function demoAnalyze(){if(!currentPhoto){toast('Choose a meal photo first');return}const labels={small:'Small plate · ~20 cm',medium:'Medium plate · ~25 cm',large:'Large plate · ~30 cm',bowl:'Bowl',unknown:'Plate size unknown'};$('scanPlateInfo').textContent=labels[$('plateSize').value];$('scanResult').classList.remove('hidden')}
-function saveDemoMeal(){const detected=[{name:'Chicken breast',qty:'~150 g',kcal:248,info:'Detected as grilled/roasted chicken. A lean protein source.'},{name:'Potatoes',qty:'~180 g',kcal:139,info:'Detected as cooked potatoes.'},{name:'Broccoli',qty:'~90 g',kcal:31,info:'Detected as cooked broccoli.'},{name:'Sauce',qty:'~30 g',kcal:102,info:'Sauce type is uncertain; calories can vary considerably.'}];addMeal({name:'Scanned meal',kcal:520,p:32,c:58,f:18,source:'scan',photo:currentPhoto,plateSize:$('plateSize').value,detected,createdAt:new Date().toISOString()});currentPhoto='';$('photo').value='';$('preview').style.display='none';$('scanResult').classList.add('hidden');toast('Scan saved with photo');showScreen('home')}
+function saveDemoMeal(){const detected=[{name:'Chicken breast',qty:'~150 g',kcal:248,info:'Detected as grilled/roasted chicken. A lean protein source.'},{name:'Potatoes',qty:'~180 g',kcal:139,info:'Detected as cooked potatoes.'},{name:'Broccoli',qty:'~90 g',kcal:31,info:'Detected as cooked broccoli.'},{name:'Sauce',qty:'~30 g',kcal:102,info:'Sauce type is uncertain; calories can vary considerably.'}];addMeal({name:'Scanned meal',kcal:520,p:32,c:58,f:18,source:'scan',photo:currentPhoto,plateSize:$('plateSize').value,detected,createdAt:new Date().toISOString()});currentPhoto='';$('cameraPhoto').value='';$('galleryPhoto').value='';$('preview').style.display='none';$('scanResult').classList.add('hidden');toast('Scan saved with photo');showScreen('home')}
 function addMeal(m){const meals=store.get('meals',[]);m.id=Date.now();m.date=new Date().toISOString().slice(0,10);m.createdAt=m.createdAt||new Date().toISOString();meals.push(m);try{store.set('meals',meals)}catch(e){m.photo='';try{store.set('meals',meals);toast('Meal saved, but photo storage is full')}catch(e2){toast('Could not save meal')}}}
 function todayMeals(){const d=new Date().toISOString().slice(0,10);return store.get('meals',[]).filter(m=>m.date===d)}
 function renderHome(){const ms=todayMeals();const sum=ms.reduce((a,m)=>({k:a.k+(+m.kcal||0),p:a.p+(+m.p||0),c:a.c+(+m.c||0),f:a.f+(+m.f||0)}),{k:0,p:0,c:0,f:0});$('homeKcal').textContent=Math.round(sum.k)+' kcal';$('homeP').textContent=Math.round(sum.p)+' g';$('homeC').textContent=Math.round(sum.c)+' g';$('homeF').textContent=Math.round(sum.f)+' g';$('mealCount').textContent=ms.length?`${ms.length} meal${ms.length>1?'s':''}`:'No meals yet'}
