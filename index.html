@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>FoodScanner v0.1</title>
+<title>FoodScanner v0.2</title>
 <style>
   :root{
     --bg:#f7f8f6; --card:#ffffff; --text:#1f2a24; --muted:#6d766f; --line:#e6e9e5;
@@ -28,7 +28,7 @@
   .back{display:inline-flex;align-items:center;gap:5px;margin-bottom:10px}
   label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}.field{width:100%;padding:13px;border:1px solid var(--line);border-radius:13px;background:#fff}.fields2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .ingredient{display:grid;grid-template-columns:1fr 86px 34px;gap:8px;align-items:center;margin-bottom:8px}.ingredient button{border:0;background:#fff;color:var(--danger);font-size:20px}
-  .photoBox{border:1.5px dashed #cfd6d0;border-radius:18px;padding:20px;text-align:center;background:#fbfcfb}.photoBox img{max-width:100%;border-radius:14px;margin-top:12px;display:none}
+  .photoBox{border:1.5px dashed #cfd6d0;border-radius:18px;padding:20px;text-align:center;background:#fbfcfb}.photoBox img{max-width:100%;border-radius:14px;margin-top:12px;display:none}.scanPhoto{width:100%;max-height:260px;object-fit:cover;border-radius:14px;margin:10px 0}.detected{background:#f7f9f7;border:1px solid var(--line);border-radius:14px;padding:11px;margin-top:8px}.detected b{display:block}.detected small{color:var(--muted)}
   .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line)}.navin{max-width:520px;margin:auto;display:grid;grid-template-columns:repeat(3,1fr);padding:8px 12px calc(8px + env(safe-area-inset-bottom))}.nav button{border:0;background:transparent;padding:8px;color:var(--muted);font-size:12px}.nav button b{display:block;font-size:18px;margin-bottom:2px}.nav button.active{color:var(--accent)}
   .empty{padding:18px;text-align:center;color:var(--muted)}
   .recipeCard{display:flex;justify-content:space-between;gap:12px;align-items:center}.recipeCard .meta{font-size:13px;color:var(--muted);margin-top:4px}
@@ -70,14 +70,27 @@
         <input id="photo" type="file" accept="image/*" capture="environment" style="margin-top:12px" onchange="previewPhoto(event)">
         <img id="preview" alt="Meal preview">
       </div>
+      <label>Plate size</label>
+      <select id="plateSize" class="field">
+        <option value="small">Small plate · about 20 cm</option>
+        <option value="medium" selected>Medium plate · about 25 cm</option>
+        <option value="large">Large plate · about 30 cm</option>
+        <option value="bowl">Bowl</option>
+        <option value="unknown">Not sure</option>
+      </select>
+      <div class="muted" style="font-size:12px;margin-top:6px">Plate size can help future AI estimate portion size more accurately.</div>
       <div style="height:12px"></div>
       <button class="primary" onclick="demoAnalyze()">Analyze meal</button>
       <div id="scanResult" class="hidden" style="margin-top:16px">
-        <div class="muted">Demo estimate — AI connection comes next</div>
-        <div class="row"><div><b>Mixed meal</b><small>Estimated portion</small></div><div><b>520 kcal</b></div></div>
+        <div class="muted">Demo detection — real AI connection comes next</div>
+        <div class="detected"><b>🍗 Chicken breast · ~150 g · 248 kcal</b><small>Detected as grilled/roasted chicken. A lean protein source.</small></div>
+        <div class="detected"><b>🥔 Potatoes · ~180 g · 139 kcal</b><small>Detected as cooked potatoes. Portion is estimated from the image and selected plate size.</small></div>
+        <div class="detected"><b>🥦 Broccoli · ~90 g · 31 kcal</b><small>Detected as cooked broccoli.</small></div>
+        <div class="detected"><b>🥣 Sauce · ~30 g · 102 kcal</b><small>Sauce type is uncertain; calories can vary considerably. Edit this when real analysis is connected.</small></div>
+        <div class="row"><div><b>Estimated total</b><small id="scanPlateInfo"></small></div><div><b>520 kcal</b></div></div>
         <div class="macro"><div class="pill">Protein<b>32 g</b></div><div class="pill">Carbs<b>58 g</b></div><div class="pill">Fat<b>18 g</b></div></div>
         <div style="height:10px"></div>
-        <button class="secondary" onclick="saveDemoMeal()">Save to today</button>
+        <button class="secondary" onclick="saveDemoMeal()">Save scan to today</button>
       </div>
     </div>
   </section>
@@ -129,10 +142,11 @@ const store={
 };
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));if(id==='home')$('navHome').classList.add('active');if(id==='scan')$('navScan').classList.add('active');if(id==='recipes'||id==='recipeView'||id==='recipeForm')$('navRecipes').classList.add('active');if(id==='recipes')renderRecipes();if(id==='today')renderToday();if(id==='home')renderHome();window.scrollTo(0,0)}
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500)}
-function previewPhoto(e){const f=e.target.files[0];if(!f)return;const u=URL.createObjectURL(f);$('preview').src=u;$('preview').style.display='block'}
-function demoAnalyze(){if(!$('photo').files[0]){toast('Choose a meal photo first');return}$('scanResult').classList.remove('hidden')}
-function saveDemoMeal(){addMeal({name:'Scanned meal',kcal:520,p:32,c:58,f:18,source:'scan'});toast('Meal saved');showScreen('home')}
-function addMeal(m){const meals=store.get('meals',[]);m.id=Date.now();m.date=new Date().toISOString().slice(0,10);meals.push(m);store.set('meals',meals)}
+let currentPhoto='';
+function previewPhoto(e){const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>{currentPhoto=ev.target.result;$('preview').src=currentPhoto;$('preview').style.display='block';$('scanResult').classList.add('hidden')};reader.readAsDataURL(f)}
+function demoAnalyze(){if(!currentPhoto){toast('Choose a meal photo first');return}const labels={small:'Small plate · ~20 cm',medium:'Medium plate · ~25 cm',large:'Large plate · ~30 cm',bowl:'Bowl',unknown:'Plate size unknown'};$('scanPlateInfo').textContent=labels[$('plateSize').value];$('scanResult').classList.remove('hidden')}
+function saveDemoMeal(){const detected=[{name:'Chicken breast',qty:'~150 g',kcal:248,info:'Detected as grilled/roasted chicken. A lean protein source.'},{name:'Potatoes',qty:'~180 g',kcal:139,info:'Detected as cooked potatoes.'},{name:'Broccoli',qty:'~90 g',kcal:31,info:'Detected as cooked broccoli.'},{name:'Sauce',qty:'~30 g',kcal:102,info:'Sauce type is uncertain; calories can vary considerably.'}];addMeal({name:'Scanned meal',kcal:520,p:32,c:58,f:18,source:'scan',photo:currentPhoto,plateSize:$('plateSize').value,detected,createdAt:new Date().toISOString()});currentPhoto='';$('photo').value='';$('preview').style.display='none';$('scanResult').classList.add('hidden');toast('Scan saved with photo');showScreen('home')}
+function addMeal(m){const meals=store.get('meals',[]);m.id=Date.now();m.date=new Date().toISOString().slice(0,10);m.createdAt=m.createdAt||new Date().toISOString();meals.push(m);try{store.set('meals',meals)}catch(e){m.photo='';try{store.set('meals',meals);toast('Meal saved, but photo storage is full')}catch(e2){toast('Could not save meal')}}}
 function todayMeals(){const d=new Date().toISOString().slice(0,10);return store.get('meals',[]).filter(m=>m.date===d)}
 function renderHome(){const ms=todayMeals();const sum=ms.reduce((a,m)=>({k:a.k+(+m.kcal||0),p:a.p+(+m.p||0),c:a.c+(+m.c||0),f:a.f+(+m.f||0)}),{k:0,p:0,c:0,f:0});$('homeKcal').textContent=Math.round(sum.k)+' kcal';$('homeP').textContent=Math.round(sum.p)+' g';$('homeC').textContent=Math.round(sum.c)+' g';$('homeF').textContent=Math.round(sum.f)+' g';$('mealCount').textContent=ms.length?`${ms.length} meal${ms.length>1?'s':''}`:'No meals yet'}
 function addIngredient(data={}){const row=document.createElement('div');row.className='card';row.style.padding='12px';row.innerHTML=`<div class="ingredient"><input class="field ingName" placeholder="Ingredient" value="${data.name||''}"><input class="field ingQty" type="number" min="0" placeholder="g" value="${data.qty||''}"><button onclick="this.closest('.card').remove()">×</button></div><div class="fields2"><input class="field ingKcal" type="number" min="0" placeholder="kcal" value="${data.kcal||''}"><input class="field ingP" type="number" min="0" step="0.1" placeholder="Protein g" value="${data.p||''}"></div><div class="fields2" style="margin-top:8px"><input class="field ingC" type="number" min="0" step="0.1" placeholder="Carbs g" value="${data.c||''}"><input class="field ingF" type="number" min="0" step="0.1" placeholder="Fat g" value="${data.f||''}"></div>`;$('ingredients').appendChild(row)}
@@ -143,7 +157,10 @@ function renderRecipes(){const rs=store.get('recipes',[]);const box=$('recipeLis
 function openRecipe(id){const r=store.get('recipes',[]).find(x=>x.id===id);if(!r)return;const t=recipeTotals(r);$('recipeViewContent').innerHTML=`<div class="card"><h2 style="margin-top:0">${r.name}</h2><div class="muted">${r.servings} servings${r.cookedWeight?` · ${r.cookedWeight} g cooked`:''}</div><div class="macro"><div class="pill">Calories<b>${Math.round(t.k/r.servings)}</b></div><div class="pill">Protein<b>${(t.p/r.servings).toFixed(1)} g</b></div><div class="pill">Carbs<b>${(t.c/r.servings).toFixed(1)} g</b></div><div class="pill">Fat<b>${(t.f/r.servings).toFixed(1)} g</b></div></div><label>Amount eaten</label><select id="portion" class="field"><option value="0.5">½ serving</option><option value="1" selected>1 serving</option><option value="1.5">1½ servings</option><option value="2">2 servings</option></select><div style="height:12px"></div><button class="primary" onclick="addRecipeMeal(${r.id})">Add to today</button><div style="height:8px"></div><button class="secondary danger" onclick="deleteRecipe(${r.id})">Delete recipe</button></div><div class="sectionTitle"><h3>Ingredients</h3></div><div class="card">${r.ingredients.map(i=>`<div class="row"><div><b>${i.name}</b><small>${i.qty?i.qty+' g':''}</small></div><div>${Math.round(i.kcal)} kcal</div></div>`).join('')}</div>`;showScreen('recipeView')}
 function addRecipeMeal(id){const r=store.get('recipes',[]).find(x=>x.id===id);const mult=+$('portion').value||1;const t=recipeTotals(r);addMeal({name:r.name,kcal:t.k/r.servings*mult,p:t.p/r.servings*mult,c:t.c/r.servings*mult,f:t.f/r.servings*mult,source:'recipe'});toast('Added to today');showScreen('home')}
 function deleteRecipe(id){store.set('recipes',store.get('recipes',[]).filter(r=>r.id!==id));toast('Recipe deleted');showScreen('recipes')}
-function renderToday(){const ms=todayMeals();const box=$('todayList');if(!ms.length){box.innerHTML='<div class="card empty">Nothing saved today yet.</div>';return}box.innerHTML='';ms.forEach(m=>{const c=document.createElement('div');c.className='card';c.innerHTML=`<div class="row"><div><b>${m.name}</b><small>${m.source==='recipe'?'Saved recipe':'Food scan'}</small></div><div><b>${Math.round(m.kcal)} kcal</b></div></div>`;box.appendChild(c)})}
+function plateLabel(v){return ({small:'Small plate · ~20 cm',medium:'Medium plate · ~25 cm',large:'Large plate · ~30 cm',bowl:'Bowl',unknown:'Plate size unknown'})[v]||''}
+function formatStamp(v){if(!v)return '';try{return new Date(v).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}catch{return v}}
+function deleteMeal(id){if(!confirm('Delete this saved meal?'))return;store.set('meals',store.get('meals',[]).filter(m=>m.id!==id));renderToday();renderHome();toast('Meal deleted')}
+function renderToday(){const ms=todayMeals().slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));const box=$('todayList');if(!ms.length){box.innerHTML='<div class="card empty">Nothing saved today yet.</div>';return}box.innerHTML='';ms.forEach(m=>{const c=document.createElement('div');c.className='card';const detail=m.source==='scan'?`<div class="muted" style="font-size:12px;margin-top:3px">${formatStamp(m.createdAt)}${m.plateSize?' · '+plateLabel(m.plateSize):''}</div>${m.photo?`<img class="scanPhoto" src="${m.photo}" alt="Saved meal photo">`:''}${m.detected?.length?`<div style="margin-top:8px">${m.detected.map(i=>`<div class="detected"><b>${i.name} · ${i.qty} · ${i.kcal} kcal</b><small>${i.info||''}</small></div>`).join('')}</div>`:''}`:'';c.innerHTML=`<div class="row"><div><b>${m.name}</b><small>${m.source==='recipe'?'Saved recipe':'Food scan'}</small></div><div><b>${Math.round(m.kcal)} kcal</b></div></div>${detail}<div style="height:8px"></div><button class="ghost danger" onclick="deleteMeal(${m.id})">Delete</button>`;box.appendChild(c)})}
 resetRecipeForm();renderHome();
 </script>
 </body>
