@@ -1,15 +1,14 @@
-FoodScanner v0.5 - real AI food analysis
+FoodScanner v0.6
 
-Files:
-- index.html
-- netlify/functions/analyze-food.mjs
+Deploy the whole folder to Netlify/GitHub. Keep the existing Netlify environment variable:
+OPENAI_API_KEY
 
-Deploy through your existing GitHub -> Netlify project:
-1. Replace the repository's index.html with this index.html.
-2. Add the folder netlify/functions and the file analyze-food.mjs exactly as shown.
-3. In Netlify open Project configuration -> Environment variables.
-4. Add OPENAI_API_KEY with your OpenAI API key. Keep the key in Netlify only; never put it in index.html or GitHub.
-5. Redeploy the site after adding/changing the environment variable.
-6. Optional: add OPENAI_MODEL if you want to override the default model (gpt-6-luna).
-
-The AI result is an estimate. It identifies visible foods, estimates portion sizes using the selected plate size as a rough reference, and estimates calories/macros. All detected foods can be edited before saving.
+New in v0.6:
+- Add missing foods manually after AI analysis
+- Edit calories and macros (protein/fat/carbs) per detected item
+- KBJU / macros display
+- Daily calorie target with consumed/remaining progress
+- Weight logging and trend chart
+- Loading spinner during AI analysis
+- New FoodScanner app icon + PWA manifest
+- Existing browser data remains on the same DATA_KEY and is migrated automatically

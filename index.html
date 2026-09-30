@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>FoodScanner v0.5</title>
+<title>FoodScanner v0.6</title>
+<meta name="theme-color" content="#2f7d57">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
   :root{
     --bg:#f7f8f6; --card:#ffffff; --text:#1f2a24; --muted:#6d766f; --line:#e6e9e5;
@@ -35,11 +39,14 @@
   .tag{font-size:12px;background:var(--accent2);color:var(--accent);padding:5px 8px;border-radius:999px;font-weight:700}
   .hidden{display:none!important}
   .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1f2a24;color:#fff;padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}
+  .brandRow{display:flex;align-items:center;gap:10px}.appIcon{width:42px;height:42px;border-radius:12px;box-shadow:0 4px 12px rgba(47,125,87,.18)}
+  .progressTrack{height:12px;background:#edf0ed;border-radius:999px;overflow:hidden}.progressFill{height:100%;background:var(--accent);width:0%;transition:.25s}.progressMeta{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-size:13px}.goalValue{font-size:30px;font-weight:800}.miniStat{background:#f7f9f7;border:1px solid var(--line);border-radius:14px;padding:12px}.miniStat b{font-size:20px}.spinnerWrap{display:none;align-items:center;justify-content:center;gap:10px;padding:14px 4px;color:var(--muted);font-size:13px}.spinnerWrap.show{display:flex}.spinner{width:22px;height:22px;border:3px solid #dfe8e2;border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+  .macroTitle{font-size:13px;font-weight:800;margin-top:12px;margin-bottom:6px}.weightChart{width:100%;height:150px;display:block}.weightPoint{fill:var(--accent)}.weightLine{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.weightGrid{stroke:#e8ece8;stroke-width:1}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="top"><div><div class="brand">FoodScanner</div><div class="sub">Simple meal tracking</div></div><div>🍏</div></div>
+  <div class="top"><div class="brandRow"><img src="icon-192.png" class="appIcon" alt="FoodScanner icon"><div><div class="brand">FoodScanner</div><div class="sub">Simple meal tracking</div></div></div></div>
 
   <section id="home" class="screen active">
     <div class="card hero">
@@ -56,8 +63,12 @@
 
     <div class="sectionTitle"><h3>Today</h3><button class="ghost" onclick="showScreen('today')">History</button></div>
     <div class="card">
-      <div class="total"><div><div class="muted">Estimated total</div><div class="kcal" id="homeKcal">0 kcal</div></div><div class="muted" id="mealCount">No meals yet</div></div>
-      <div class="macro"><div class="pill">Protein<b id="homeP">0 g</b></div><div class="pill">Carbs<b id="homeC">0 g</b></div><div class="pill">Fat<b id="homeF">0 g</b></div></div>
+      <div class="total"><div><div class="muted">Calories consumed</div><div class="kcal" id="homeKcal">0 kcal</div></div><div class="muted" id="mealCount">No meals yet</div></div>
+      <div style="height:10px"></div>
+      <div class="progressTrack"><div class="progressFill" id="homeGoalFill"></div></div>
+      <div class="progressMeta"><span id="homeGoalText">Target not set</span><button class="ghost" style="padding:0" onclick="showScreen('track')">Set / track</button></div>
+      <div class="macroTitle">КБЖУ / Macros</div>
+      <div class="macro"><div class="pill">Protein · Б<b id="homeP">0 g</b></div><div class="pill">Fat · Ж<b id="homeF">0 g</b></div><div class="pill">Carbs · У<b id="homeC">0 g</b></div></div>
     </div>
     <div class="muted" id="savedStatus" style="font-size:12px;text-align:center;margin-top:8px"></div>
   </section>
@@ -87,12 +98,14 @@
       <div class="muted" style="font-size:12px;margin-top:6px">Plate size can help future AI estimate portion size more accurately.</div>
       <div style="height:12px"></div>
       <button class="primary" id="analyzeBtn" onclick="analyzeMeal()">Analyze meal</button>
+      <div id="spinnerWrap" class="spinnerWrap"><div class="spinner"></div><span>Analyzing your meal…</span></div>
       <div id="analysisStatus" class="muted" style="font-size:12px;margin-top:8px;text-align:center"></div>
       <div id="scanResult" class="hidden" style="margin-top:16px">
         <div class="row"><div><b id="scanMealName">Detected meal</b><small id="scanConfidence"></small></div><span class="tag">AI estimate</span></div>
         <div id="detectedList"></div>
         <div class="row" style="margin-top:12px"><div><b>Estimated total</b><small id="scanPlateInfo"></small></div><div><b id="scanTotalKcal">0 kcal</b></div></div>
-        <div class="macro"><div class="pill">Protein<b id="scanP">0 g</b></div><div class="pill">Carbs<b id="scanC">0 g</b></div><div class="pill">Fat<b id="scanF">0 g</b></div></div>
+        <div class="macroTitle">КБЖУ / Macros</div>
+        <div class="macro"><div class="pill">Protein · Б<b id="scanP">0 g</b></div><div class="pill">Fat · Ж<b id="scanF">0 g</b></div><div class="pill">Carbs · У<b id="scanC">0 g</b></div></div>
         <div style="height:10px"></div>
         <button class="secondary" onclick="toggleAnalysisEdit()">✏️ Edit detected foods</button>
         <div id="analysisEdit" class="hidden" style="margin-top:10px"></div>
@@ -127,6 +140,28 @@
     <div id="recipeViewContent"></div>
   </section>
 
+
+  <section id="track" class="screen">
+    <button class="ghost back" onclick="showScreen('home')">← Back</button>
+    <h2>Daily tracking</h2>
+    <div class="card">
+      <div class="muted">Today's calories</div>
+      <div class="goalValue"><span id="trackConsumed">0</span> <span style="font-size:16px;font-weight:600">/ <span id="trackTarget">—</span> kcal</span></div>
+      <div style="height:10px"></div>
+      <div class="progressTrack"><div class="progressFill" id="trackGoalFill"></div></div>
+      <div class="progressMeta"><span id="trackRemaining">Set a target below</span><span id="trackPercent"></span></div>
+      <label>Daily calorie target</label>
+      <div class="fields2"><input id="calorieTarget" class="field" type="number" min="0" step="50" placeholder="e.g. 1800"><button class="secondary" onclick="saveCalorieTarget()">Save target</button></div>
+    </div>
+    <div class="card">
+      <div class="sectionTitle" style="margin-top:0"><h3>Weight</h3><span class="tag" id="currentWeightTag">No entries</span></div>
+      <div class="fields2"><div><label>Date</label><input id="weightDate" class="field" type="date"></div><div><label>Weight (kg)</label><input id="weightValue" class="field" type="number" min="20" max="400" step="0.1" placeholder="e.g. 64.2"></div></div>
+      <div style="height:10px"></div><button class="secondary" onclick="addWeightEntry()">+ Add weight</button>
+      <div id="weightChartBox" style="margin-top:14px"></div>
+      <div id="weightList" class="list" style="margin-top:10px"></div>
+    </div>
+  </section>
+
   <section id="today" class="screen">
     <button class="ghost back" onclick="showScreen('home')">← Back</button>
     <h2>Meal history</h2>
@@ -143,9 +178,10 @@
   </section>
 </div>
 
-<div class="nav"><div class="navin">
+<div class="nav"><div class="navin" style="grid-template-columns:repeat(4,1fr)">
   <button id="navHome" class="active" onclick="showScreen('home')"><b>⌂</b>Home</button>
   <button id="navScan" onclick="showScreen('scan')"><b>📷</b>Scan</button>
+  <button id="navTrack" onclick="showScreen('track')"><b>⚖️</b>Track</button>
   <button id="navRecipes" onclick="showScreen('recipes')"><b>🍳</b>Recipes</button>
 </div></div>
 <div id="toast" class="toast"></div>
@@ -157,13 +193,13 @@ const store={
  data(){
    try{
      const saved=JSON.parse(localStorage.getItem(DATA_KEY));
-     if(saved && typeof saved==='object') return {meals:saved.meals||[],recipes:saved.recipes||[]};
+     if(saved && typeof saved==='object') return {meals:saved.meals||[],recipes:saved.recipes||[],settings:saved.settings||{},weights:saved.weights||[]};
    }catch{}
    // Migrate data from FoodScanner v0.1-v0.3 automatically.
    let meals=[], recipes=[];
    try{meals=JSON.parse(localStorage.getItem('meals'))||[]}catch{}
    try{recipes=JSON.parse(localStorage.getItem('recipes'))||[]}catch{}
-   const data={meals,recipes};
+   const data={meals,recipes,settings:{},weights:[]};
    try{localStorage.setItem(DATA_KEY,JSON.stringify(data))}catch{}
    return data;
  },
@@ -174,7 +210,7 @@ function localDateKey(d=new Date()){
  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
  return `${y}-${m}-${day}`;
 }
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));if(id==='home')$('navHome').classList.add('active');if(id==='scan')$('navScan').classList.add('active');if(id==='recipes'||id==='recipeView'||id==='recipeForm')$('navRecipes').classList.add('active');if(id==='recipes')renderRecipes();if(id==='today')renderToday();if(id==='home')renderHome();window.scrollTo(0,0)}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));if(id==='home')$('navHome').classList.add('active');if(id==='scan')$('navScan').classList.add('active');if(id==='track')$('navTrack').classList.add('active');if(id==='recipes'||id==='recipeView'||id==='recipeForm')$('navRecipes').classList.add('active');if(id==='recipes')renderRecipes();if(id==='today')renderToday();if(id==='track')renderTrack();if(id==='home')renderHome();window.scrollTo(0,0)}
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500)}
 let currentPhoto='';
 let currentAnalysis=null;
@@ -198,7 +234,7 @@ function previewPhoto(e){
 function plateLabelForAI(v){return ({small:'small plate, about 20 cm diameter',medium:'medium plate, about 25 cm diameter',large:'large plate, about 30 cm diameter',bowl:'bowl; exact diameter unknown',unknown:'plate or container size unknown'})[v]||'unknown'}
 async function analyzeMeal(){
  if(!currentPhoto){toast('Choose a meal photo first');return}
- const btn=$('analyzeBtn');btn.disabled=true;btn.textContent='Analyzing…';$('analysisStatus').textContent='Looking at the photo and estimating portions…';$('scanResult').classList.add('hidden');
+ const btn=$('analyzeBtn');btn.disabled=true;btn.textContent='Analyzing…';$('analysisStatus').textContent='';$('spinnerWrap').classList.add('show');$('scanResult').classList.add('hidden');
  try{
    const res=await fetch('/.netlify/functions/analyze-food',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({image:currentPhoto,plateSize:$('plateSize').value,plateDescription:plateLabelForAI($('plateSize').value)})});
    let data={};try{data=await res.json()}catch{}
@@ -206,7 +242,7 @@ async function analyzeMeal(){
    currentAnalysis=data;renderAnalysis();$('analysisStatus').textContent='';
  }catch(err){
    console.error(err);$('analysisStatus').textContent=err.message.includes('404')?'AI function is not deployed yet. Upload the full v0.5 project folder to GitHub/Netlify.':err.message;toast('Could not analyze photo');
- }finally{btn.disabled=false;btn.textContent='Analyze meal'}
+ }finally{btn.disabled=false;btn.textContent='Analyze meal';$('spinnerWrap').classList.remove('show')}
 }
 function recalcAnalysis(){
  if(!currentAnalysis)return;
@@ -221,23 +257,24 @@ function renderAnalysis(){
  $('scanMealName').textContent=currentAnalysis.meal_name||'Scanned meal';$('scanConfidence').textContent=`Confidence: ${currentAnalysis.confidence||'medium'}`;$('scanPlateInfo').textContent=plateLabel($('plateSize').value);
  $('detectedList').innerHTML=(currentAnalysis.items||[]).map(i=>`<div class="detected"><b>${escapeHtml(i.name)} · ~${Math.round(+i.grams||0)} g · ${Math.round(+i.kcal||0)} kcal</b><small>${escapeHtml(i.info||'')}</small></div>`).join('')||'<div class="muted">No food items could be identified confidently.</div>';
  $('scanTotalKcal').textContent=Math.round(currentAnalysis.calories||0)+' kcal';$('scanP').textContent=Math.round(currentAnalysis.protein_g||0)+' g';$('scanC').textContent=Math.round(currentAnalysis.carbs_g||0)+' g';$('scanF').textContent=Math.round(currentAnalysis.fat_g||0)+' g';
- $('analysisEdit').innerHTML=(currentAnalysis.items||[]).map((i,idx)=>`<div class="card" style="padding:10px"><input class="field" value="${escapeAttr(i.name)}" oninput="updateAnalysisItem(${idx},'name',this.value)"><div class="fields2"><input class="field" type="number" min="0" value="${Math.round(+i.grams||0)}" oninput="updateAnalysisItem(${idx},'grams',this.value)" placeholder="grams"><input class="field" type="number" min="0" value="${Math.round(+i.kcal||0)}" oninput="updateAnalysisItem(${idx},'kcal',this.value)" placeholder="kcal"></div><button class="ghost danger" onclick="removeAnalysisItem(${idx})">Remove</button></div>`).join('');
+ $('analysisEdit').innerHTML=(currentAnalysis.items||[]).map((i,idx)=>`<div class="card" style="padding:10px"><input class="field" value="${escapeAttr(i.name)}" oninput="updateAnalysisItem(${idx},'name',this.value)" placeholder="Food name"><div class="fields2" style="margin-top:8px"><input class="field" type="number" min="0" value="${Math.round(+i.grams||0)}" oninput="updateAnalysisItem(${idx},'grams',this.value)" placeholder="grams"><input class="field" type="number" min="0" value="${Math.round(+i.kcal||0)}" oninput="updateAnalysisItem(${idx},'kcal',this.value)" placeholder="kcal"></div><div class="fields2" style="margin-top:8px"><input class="field" type="number" min="0" step="0.1" value="${(+i.p||0).toFixed(1)}" oninput="updateAnalysisItem(${idx},'p',this.value)" placeholder="Protein g"><input class="field" type="number" min="0" step="0.1" value="${(+i.f||0).toFixed(1)}" oninput="updateAnalysisItem(${idx},'f',this.value)" placeholder="Fat g"></div><div style="margin-top:8px"><input class="field" type="number" min="0" step="0.1" value="${(+i.c||0).toFixed(1)}" oninput="updateAnalysisItem(${idx},'c',this.value)" placeholder="Carbs g"></div><button class="ghost danger" onclick="removeAnalysisItem(${idx})">Remove</button></div>`).join('')+`<button class="secondary" onclick="addAnalysisItem()">+ Add missing food</button>`;
  $('scanResult').classList.remove('hidden')
 }
 function escapeHtml(v=''){return String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function escapeAttr(v=''){return escapeHtml(v).replace(/'/g,'&#39;')}
 function toggleAnalysisEdit(){$('analysisEdit').classList.toggle('hidden')}
-function updateAnalysisItem(idx,key,val){if(!currentAnalysis?.items?.[idx])return;currentAnalysis.items[idx][key]=['grams','kcal'].includes(key)?(+val||0):val;renderAnalysis();$('analysisEdit').classList.remove('hidden')}
+function updateAnalysisItem(idx,key,val){if(!currentAnalysis?.items?.[idx])return;currentAnalysis.items[idx][key]=['grams','kcal','p','c','f'].includes(key)?(+val||0):val;recalcAnalysis();$('detectedList').innerHTML=(currentAnalysis.items||[]).map(i=>`<div class="detected"><b>${escapeHtml(i.name||'Added food')} · ~${Math.round(+i.grams||0)} g · ${Math.round(+i.kcal||0)} kcal</b><small>${escapeHtml(i.info||'')}</small></div>`).join('')||'<div class="muted">No food items could be identified confidently.</div>';$('scanTotalKcal').textContent=Math.round(currentAnalysis.calories||0)+' kcal';$('scanP').textContent=Math.round(currentAnalysis.protein_g||0)+' g';$('scanC').textContent=Math.round(currentAnalysis.carbs_g||0)+' g';$('scanF').textContent=Math.round(currentAnalysis.fat_g||0)+' g'}
+function addAnalysisItem(){if(!currentAnalysis)currentAnalysis={meal_name:'Scanned meal',confidence:'medium',items:[]};currentAnalysis.items.push({name:'',grams:0,kcal:0,p:0,c:0,f:0,info:'Added manually'});renderAnalysis();$('analysisEdit').classList.remove('hidden');setTimeout(()=>{const inputs=$('analysisEdit').querySelectorAll('input');if(inputs.length)inputs[inputs.length-6]?.focus?.()},0)}
 function removeAnalysisItem(idx){currentAnalysis.items.splice(idx,1);renderAnalysis();$('analysisEdit').classList.remove('hidden')}
 function saveAnalyzedMeal(){
  if(!currentAnalysis){toast('Analyze the meal first');return}recalcAnalysis();
- const detected=(currentAnalysis.items||[]).map(i=>({name:i.name,qty:`~${Math.round(+i.grams||0)} g`,kcal:Math.round(+i.kcal||0),info:i.info||''}));
+ const detected=(currentAnalysis.items||[]).map(i=>({name:i.name||'Added food',qty:`~${Math.round(+i.grams||0)} g`,kcal:Math.round(+i.kcal||0),p:+i.p||0,c:+i.c||0,f:+i.f||0,info:i.info||''}));
  addMeal({name:currentAnalysis.meal_name||'Scanned meal',kcal:currentAnalysis.calories||0,p:currentAnalysis.protein_g||0,c:currentAnalysis.carbs_g||0,f:currentAnalysis.fat_g||0,source:'scan',photo:currentPhoto,plateSize:$('plateSize').value,detected,confidence:currentAnalysis.confidence,createdAt:new Date().toISOString()});
  currentPhoto='';currentAnalysis=null;$('cameraPhoto').value='';$('galleryPhoto').value='';$('preview').style.display='none';$('scanResult').classList.add('hidden');$('analysisStatus').textContent='';toast('Scan saved with photo');showScreen('home')
 }
 function addMeal(m){const meals=store.get('meals',[]);m.id=Date.now();m.date=localDateKey();m.createdAt=m.createdAt||new Date().toISOString();meals.push(m);try{store.set('meals',meals)}catch(e){m.photo='';try{store.set('meals',meals);toast('Meal saved, but photo storage is full')}catch(e2){toast('Could not save meal')}}}
 function todayMeals(){const d=localDateKey();return store.get('meals',[]).filter(m=>m.date===d)}
-function renderHome(){const ms=todayMeals();const sum=ms.reduce((a,m)=>({k:a.k+(+m.kcal||0),p:a.p+(+m.p||0),c:a.c+(+m.c||0),f:a.f+(+m.f||0)}),{k:0,p:0,c:0,f:0});$('homeKcal').textContent=Math.round(sum.k)+' kcal';$('homeP').textContent=Math.round(sum.p)+' g';$('homeC').textContent=Math.round(sum.c)+' g';$('homeF').textContent=Math.round(sum.f)+' g';$('mealCount').textContent=ms.length?`${ms.length} meal${ms.length>1?'s':''}`:'No meals yet';const all=store.get('meals',[]),rs=store.get('recipes',[]);$('savedStatus').textContent=`Saved on this device: ${all.length} meal${all.length===1?'':'s'} · ${rs.length} recipe${rs.length===1?'':'s'}`}
+function renderHome(){const ms=todayMeals();const sum=ms.reduce((a,m)=>({k:a.k+(+m.kcal||0),p:a.p+(+m.p||0),c:a.c+(+m.c||0),f:a.f+(+m.f||0)}),{k:0,p:0,c:0,f:0});$('homeKcal').textContent=Math.round(sum.k)+' kcal';$('homeP').textContent=Math.round(sum.p)+' g';$('homeC').textContent=Math.round(sum.c)+' g';$('homeF').textContent=Math.round(sum.f)+' g';$('mealCount').textContent=ms.length?`${ms.length} meal${ms.length>1?'s':''}`:'No meals yet';const settings=store.get('settings',{}),target=+settings.calorieTarget||0;if(target>0){const pct=Math.min(100,Math.max(0,sum.k/target*100));$('homeGoalFill').style.width=pct+'%';const rem=Math.round(target-sum.k);$('homeGoalText').textContent=rem>=0?`${rem} kcal remaining · ${Math.round(sum.k)} / ${target}`:`${Math.abs(rem)} kcal over target · ${Math.round(sum.k)} / ${target}`;}else{$('homeGoalFill').style.width='0%';$('homeGoalText').textContent='Target not set';}const all=store.get('meals',[]),rs=store.get('recipes',[]);$('savedStatus').textContent=`Saved on this device: ${all.length} meal${all.length===1?'':'s'} · ${rs.length} recipe${rs.length===1?'':'s'}`}
 function addIngredient(data={}){const row=document.createElement('div');row.className='card';row.style.padding='12px';row.innerHTML=`<div class="ingredient"><input class="field ingName" placeholder="Ingredient" value="${data.name||''}"><input class="field ingQty" type="number" min="0" placeholder="g" value="${data.qty||''}"><button onclick="this.closest('.card').remove()">×</button></div><div class="fields2"><input class="field ingKcal" type="number" min="0" placeholder="kcal" value="${data.kcal||''}"><input class="field ingP" type="number" min="0" step="0.1" placeholder="Protein g" value="${data.p||''}"></div><div class="fields2" style="margin-top:8px"><input class="field ingC" type="number" min="0" step="0.1" placeholder="Carbs g" value="${data.c||''}"><input class="field ingF" type="number" min="0" step="0.1" placeholder="Fat g" value="${data.f||''}"></div>`;$('ingredients').appendChild(row)}
 function resetRecipeForm(){$('recipeName').value='';$('servings').value=4;$('cookedWeight').value='';$('ingredients').innerHTML='';addIngredient();addIngredient()}
 function saveRecipe(){const name=$('recipeName').value.trim();if(!name){toast('Add a recipe name');return}const servings=Math.max(1,+$('servings').value||1);const rows=[...$('ingredients').querySelectorAll('.card')];const ingredients=rows.map(r=>({name:r.querySelector('.ingName').value.trim(),qty:+r.querySelector('.ingQty').value||0,kcal:+r.querySelector('.ingKcal').value||0,p:+r.querySelector('.ingP').value||0,c:+r.querySelector('.ingC').value||0,f:+r.querySelector('.ingF').value||0})).filter(x=>x.name);if(!ingredients.length){toast('Add at least one ingredient');return}const recipes=store.get('recipes',[]);recipes.push({id:Date.now(),name,servings,cookedWeight:+$('cookedWeight').value||0,ingredients});store.set('recipes',recipes);toast('Recipe saved');showScreen('recipes')}
@@ -250,9 +287,16 @@ function plateLabel(v){return ({small:'Small plate · ~20 cm',medium:'Medium pla
 function formatStamp(v){if(!v)return '';try{return new Date(v).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}catch{return v}}
 function deleteMeal(id){if(!confirm('Delete this saved meal?'))return;store.set('meals',store.get('meals',[]).filter(m=>m.id!==id));renderToday();renderHome();toast('Meal deleted')}
 function renderToday(){const ms=store.get('meals',[]).slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));const box=$('todayList');if(!ms.length){box.innerHTML='<div class="card empty">No saved meals yet.</div>';return}box.innerHTML='';let lastDate='';ms.forEach(m=>{if(m.date!==lastDate){lastDate=m.date;const h=document.createElement('div');h.className='sectionTitle';h.innerHTML=`<h3>${m.date===localDateKey()?'Today':new Date(m.date+'T12:00:00').toLocaleDateString([], {dateStyle:'medium'})}</h3>`;box.appendChild(h)}const c=document.createElement('div');c.className='card';const detail=m.source==='scan'?`<div class="muted" style="font-size:12px;margin-top:3px">${formatStamp(m.createdAt)}${m.plateSize?' · '+plateLabel(m.plateSize):''}</div>${m.photo?`<img class="scanPhoto" src="${m.photo}" alt="Saved meal photo">`:''}${m.detected?.length?`<div style="margin-top:8px">${m.detected.map(i=>`<div class="detected"><b>${i.name} · ${i.qty} · ${i.kcal} kcal</b><small>${i.info||''}</small></div>`).join('')}</div>`:''}`:'';c.innerHTML=`<div class="row"><div><b>${m.name}</b><small>${m.source==='recipe'?'Saved recipe':'Food scan'}</small></div><div><b>${Math.round(m.kcal)} kcal</b></div></div>${detail}<div style="height:8px"></div><button class="ghost danger" onclick="deleteMeal(${m.id})">Delete</button>`;box.appendChild(c)})}
-function exportBackup(){const data=store.data();const blob=new Blob([JSON.stringify({app:'FoodScanner',version:1,exportedAt:new Date().toISOString(),...data},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`foodscanner-backup-${localDateKey()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Backup exported')}
-function importBackup(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!Array.isArray(d.meals)||!Array.isArray(d.recipes))throw new Error();if(!confirm(`Import ${d.meals.length} meals and ${d.recipes.length} recipes? This will replace data saved in this browser.`))return;localStorage.setItem(DATA_KEY,JSON.stringify({meals:d.meals,recipes:d.recipes}));renderHome();renderToday();toast('Backup restored')}catch{toast('This is not a valid FoodScanner backup')}finally{e.target.value=''}};r.readAsText(f)}
-resetRecipeForm();renderHome();
+
+function saveCalorieTarget(){const v=Math.max(0,Math.round(+$('calorieTarget').value||0));const settings=store.get('settings',{});settings.calorieTarget=v;store.set('settings',settings);toast(v?'Calorie target saved':'Calorie target cleared');renderTrack();renderHome()}
+function addWeightEntry(){const date=$('weightDate').value||localDateKey(),value=+$('weightValue').value;if(!value||value<20||value>400){toast('Enter a valid weight');return}let ws=store.get('weights',[]);const existing=ws.findIndex(w=>w.date===date);const row={id:existing>=0?ws[existing].id:Date.now(),date,value:Math.round(value*10)/10,createdAt:new Date().toISOString()};if(existing>=0)ws[existing]=row;else ws.push(row);ws.sort((a,b)=>a.date.localeCompare(b.date));store.set('weights',ws);$('weightValue').value='';toast(existing>=0?'Weight updated':'Weight saved');renderTrack()}
+function deleteWeight(id){store.set('weights',store.get('weights',[]).filter(w=>w.id!==id));renderTrack();toast('Weight entry deleted')}
+function renderWeightChart(ws){const box=$('weightChartBox');if(!ws.length){box.innerHTML='<div class="muted" style="font-size:13px">Add your first weight entry to start the trend.</div>';return}const recent=ws.slice(-30);if(recent.length===1){box.innerHTML=`<div class="miniStat"><div class="muted">Current weight</div><b>${recent[0].value.toFixed(1)} kg</b></div>`;return}const vals=recent.map(w=>w.value),min=Math.min(...vals),max=Math.max(...vals),pad=Math.max(0.5,(max-min)*0.2),lo=min-pad,hi=max+pad,w=460,h=140,left=10,right=10,top=10,bottom=20;const x=i=>left+(i/(recent.length-1))*(w-left-right),y=v=>top+(hi-v)/(hi-lo)*(h-top-bottom);const pts=recent.map((r,i)=>`${x(i)},${y(r.value)}`).join(' ');const grid=[0,.5,1].map(t=>{const yy=top+t*(h-top-bottom);return `<line class="weightGrid" x1="${left}" x2="${w-right}" y1="${yy}" y2="${yy}"/>`}).join('');const circles=recent.map((r,i)=>`<circle class="weightPoint" cx="${x(i)}" cy="${y(r.value)}" r="3.5"/>`).join('');box.innerHTML=`<svg class="weightChart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Weight trend">${grid}<polyline class="weightLine" points="${pts}"/>${circles}<text x="${left}" y="${h-3}" font-size="11" fill="#6d766f">${recent[0].date}</text><text x="${w-right}" y="${h-3}" text-anchor="end" font-size="11" fill="#6d766f">${recent[recent.length-1].date}</text></svg>`}
+function renderTrack(){const ms=todayMeals(),sum=Math.round(ms.reduce((a,m)=>a+(+m.kcal||0),0)),settings=store.get('settings',{}),target=+settings.calorieTarget||0;$('trackConsumed').textContent=sum;$('trackTarget').textContent=target||'—';$('calorieTarget').value=target||'';let pct=0;if(target>0){pct=Math.min(100,Math.max(0,sum/target*100));const rem=target-sum;$('trackRemaining').textContent=rem>=0?`${Math.round(rem)} kcal remaining`:`${Math.abs(Math.round(rem))} kcal over target`;$('trackPercent').textContent=`${Math.round(sum/target*100)}%`;}else{$('trackRemaining').textContent='Set a target below';$('trackPercent').textContent='';}$('trackGoalFill').style.width=pct+'%';const ws=store.get('weights',[]).slice().sort((a,b)=>a.date.localeCompare(b.date));$('weightDate').value=$('weightDate').value||localDateKey();const latest=ws[ws.length-1];$('currentWeightTag').textContent=latest?`${latest.value.toFixed(1)} kg`:'No entries';renderWeightChart(ws);const list=$('weightList');if(!ws.length){list.innerHTML='';return}list.innerHTML=ws.slice().reverse().slice(0,12).map(w=>`<div class="row"><div><b>${w.value.toFixed(1)} kg</b><small>${new Date(w.date+'T12:00:00').toLocaleDateString([], {dateStyle:'medium'})}</small></div><button class="ghost danger" onclick="deleteWeight(${w.id})">Delete</button></div>`).join('')}
+
+function exportBackup(){const data=store.data();const blob=new Blob([JSON.stringify({app:'FoodScanner',version:2,exportedAt:new Date().toISOString(),...data},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`foodscanner-backup-${localDateKey()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Backup exported')}
+function importBackup(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!Array.isArray(d.meals)||!Array.isArray(d.recipes))throw new Error();if(!confirm(`Import ${d.meals.length} meals and ${d.recipes.length} recipes? This will replace data saved in this browser.`))return;localStorage.setItem(DATA_KEY,JSON.stringify({meals:d.meals,recipes:d.recipes,settings:d.settings||{},weights:Array.isArray(d.weights)?d.weights:[]}));renderHome();renderToday();toast('Backup restored')}catch{toast('This is not a valid FoodScanner backup')}finally{e.target.value=''}};r.readAsText(f)}
+resetRecipeForm();$('weightDate').value=localDateKey();renderHome();
 </script>
 </body>
 </html>
