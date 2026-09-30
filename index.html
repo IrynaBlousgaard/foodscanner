@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>FoodScanner v0.4</title>
+<title>FoodScanner v0.5</title>
 <style>
   :root{
     --bg:#f7f8f6; --card:#ffffff; --text:#1f2a24; --muted:#6d766f; --line:#e6e9e5;
@@ -86,17 +86,18 @@
       </select>
       <div class="muted" style="font-size:12px;margin-top:6px">Plate size can help future AI estimate portion size more accurately.</div>
       <div style="height:12px"></div>
-      <button class="primary" onclick="demoAnalyze()">Analyze meal</button>
+      <button class="primary" id="analyzeBtn" onclick="analyzeMeal()">Analyze meal</button>
+      <div id="analysisStatus" class="muted" style="font-size:12px;margin-top:8px;text-align:center"></div>
       <div id="scanResult" class="hidden" style="margin-top:16px">
-        <div class="muted">Demo detection — real AI connection comes next</div>
-        <div class="detected"><b>🍗 Chicken breast · ~150 g · 248 kcal</b><small>Detected as grilled/roasted chicken. A lean protein source.</small></div>
-        <div class="detected"><b>🥔 Potatoes · ~180 g · 139 kcal</b><small>Detected as cooked potatoes. Portion is estimated from the image and selected plate size.</small></div>
-        <div class="detected"><b>🥦 Broccoli · ~90 g · 31 kcal</b><small>Detected as cooked broccoli.</small></div>
-        <div class="detected"><b>🥣 Sauce · ~30 g · 102 kcal</b><small>Sauce type is uncertain; calories can vary considerably. Edit this when real analysis is connected.</small></div>
-        <div class="row"><div><b>Estimated total</b><small id="scanPlateInfo"></small></div><div><b>520 kcal</b></div></div>
-        <div class="macro"><div class="pill">Protein<b>32 g</b></div><div class="pill">Carbs<b>58 g</b></div><div class="pill">Fat<b>18 g</b></div></div>
+        <div class="row"><div><b id="scanMealName">Detected meal</b><small id="scanConfidence"></small></div><span class="tag">AI estimate</span></div>
+        <div id="detectedList"></div>
+        <div class="row" style="margin-top:12px"><div><b>Estimated total</b><small id="scanPlateInfo"></small></div><div><b id="scanTotalKcal">0 kcal</b></div></div>
+        <div class="macro"><div class="pill">Protein<b id="scanP">0 g</b></div><div class="pill">Carbs<b id="scanC">0 g</b></div><div class="pill">Fat<b id="scanF">0 g</b></div></div>
         <div style="height:10px"></div>
-        <button class="secondary" onclick="saveDemoMeal()">Save scan to today</button>
+        <button class="secondary" onclick="toggleAnalysisEdit()">✏️ Edit detected foods</button>
+        <div id="analysisEdit" class="hidden" style="margin-top:10px"></div>
+        <div style="height:8px"></div>
+        <button class="primary" onclick="saveAnalyzedMeal()">Save scan to today</button>
       </div>
     </div>
   </section>
@@ -176,9 +177,64 @@ function localDateKey(d=new Date()){
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));if(id==='home')$('navHome').classList.add('active');if(id==='scan')$('navScan').classList.add('active');if(id==='recipes'||id==='recipeView'||id==='recipeForm')$('navRecipes').classList.add('active');if(id==='recipes')renderRecipes();if(id==='today')renderToday();if(id==='home')renderHome();window.scrollTo(0,0)}
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500)}
 let currentPhoto='';
-function previewPhoto(e){const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>{currentPhoto=ev.target.result;$('preview').src=currentPhoto;$('preview').style.display='block';$('scanResult').classList.add('hidden')};reader.readAsDataURL(f)}
-function demoAnalyze(){if(!currentPhoto){toast('Choose a meal photo first');return}const labels={small:'Small plate · ~20 cm',medium:'Medium plate · ~25 cm',large:'Large plate · ~30 cm',bowl:'Bowl',unknown:'Plate size unknown'};$('scanPlateInfo').textContent=labels[$('plateSize').value];$('scanResult').classList.remove('hidden')}
-function saveDemoMeal(){const detected=[{name:'Chicken breast',qty:'~150 g',kcal:248,info:'Detected as grilled/roasted chicken. A lean protein source.'},{name:'Potatoes',qty:'~180 g',kcal:139,info:'Detected as cooked potatoes.'},{name:'Broccoli',qty:'~90 g',kcal:31,info:'Detected as cooked broccoli.'},{name:'Sauce',qty:'~30 g',kcal:102,info:'Sauce type is uncertain; calories can vary considerably.'}];addMeal({name:'Scanned meal',kcal:520,p:32,c:58,f:18,source:'scan',photo:currentPhoto,plateSize:$('plateSize').value,detected,createdAt:new Date().toISOString()});currentPhoto='';$('cameraPhoto').value='';$('galleryPhoto').value='';$('preview').style.display='none';$('scanResult').classList.add('hidden');toast('Scan saved with photo');showScreen('home')}
+let currentAnalysis=null;
+function previewPhoto(e){
+ const f=e.target.files[0];if(!f)return;
+ if(!f.type.startsWith('image/')){toast('Please choose an image');return}
+ const reader=new FileReader();
+ reader.onload=ev=>{
+   const img=new Image();
+   img.onload=()=>{
+     const max=1600,scale=Math.min(1,max/Math.max(img.width,img.height));
+     const c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+     c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+     currentPhoto=c.toDataURL('image/jpeg',0.82);
+     $('preview').src=currentPhoto;$('preview').style.display='block';$('scanResult').classList.add('hidden');$('analysisStatus').textContent='';currentAnalysis=null;
+   };
+   img.src=ev.target.result;
+ };
+ reader.readAsDataURL(f)
+}
+function plateLabelForAI(v){return ({small:'small plate, about 20 cm diameter',medium:'medium plate, about 25 cm diameter',large:'large plate, about 30 cm diameter',bowl:'bowl; exact diameter unknown',unknown:'plate or container size unknown'})[v]||'unknown'}
+async function analyzeMeal(){
+ if(!currentPhoto){toast('Choose a meal photo first');return}
+ const btn=$('analyzeBtn');btn.disabled=true;btn.textContent='Analyzing…';$('analysisStatus').textContent='Looking at the photo and estimating portions…';$('scanResult').classList.add('hidden');
+ try{
+   const res=await fetch('/.netlify/functions/analyze-food',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({image:currentPhoto,plateSize:$('plateSize').value,plateDescription:plateLabelForAI($('plateSize').value)})});
+   let data={};try{data=await res.json()}catch{}
+   if(!res.ok)throw new Error(data.error||`Analysis failed (${res.status})`);
+   currentAnalysis=data;renderAnalysis();$('analysisStatus').textContent='';
+ }catch(err){
+   console.error(err);$('analysisStatus').textContent=err.message.includes('404')?'AI function is not deployed yet. Upload the full v0.5 project folder to GitHub/Netlify.':err.message;toast('Could not analyze photo');
+ }finally{btn.disabled=false;btn.textContent='Analyze meal'}
+}
+function recalcAnalysis(){
+ if(!currentAnalysis)return;
+ const items=currentAnalysis.items||[];
+ currentAnalysis.calories=Math.round(items.reduce((a,i)=>a+(+i.kcal||0),0));
+ currentAnalysis.protein_g=items.reduce((a,i)=>a+(+i.p||0),0);
+ currentAnalysis.carbs_g=items.reduce((a,i)=>a+(+i.c||0),0);
+ currentAnalysis.fat_g=items.reduce((a,i)=>a+(+i.f||0),0);
+}
+function renderAnalysis(){
+ if(!currentAnalysis)return;recalcAnalysis();
+ $('scanMealName').textContent=currentAnalysis.meal_name||'Scanned meal';$('scanConfidence').textContent=`Confidence: ${currentAnalysis.confidence||'medium'}`;$('scanPlateInfo').textContent=plateLabel($('plateSize').value);
+ $('detectedList').innerHTML=(currentAnalysis.items||[]).map(i=>`<div class="detected"><b>${escapeHtml(i.name)} · ~${Math.round(+i.grams||0)} g · ${Math.round(+i.kcal||0)} kcal</b><small>${escapeHtml(i.info||'')}</small></div>`).join('')||'<div class="muted">No food items could be identified confidently.</div>';
+ $('scanTotalKcal').textContent=Math.round(currentAnalysis.calories||0)+' kcal';$('scanP').textContent=Math.round(currentAnalysis.protein_g||0)+' g';$('scanC').textContent=Math.round(currentAnalysis.carbs_g||0)+' g';$('scanF').textContent=Math.round(currentAnalysis.fat_g||0)+' g';
+ $('analysisEdit').innerHTML=(currentAnalysis.items||[]).map((i,idx)=>`<div class="card" style="padding:10px"><input class="field" value="${escapeAttr(i.name)}" oninput="updateAnalysisItem(${idx},'name',this.value)"><div class="fields2"><input class="field" type="number" min="0" value="${Math.round(+i.grams||0)}" oninput="updateAnalysisItem(${idx},'grams',this.value)" placeholder="grams"><input class="field" type="number" min="0" value="${Math.round(+i.kcal||0)}" oninput="updateAnalysisItem(${idx},'kcal',this.value)" placeholder="kcal"></div><button class="ghost danger" onclick="removeAnalysisItem(${idx})">Remove</button></div>`).join('');
+ $('scanResult').classList.remove('hidden')
+}
+function escapeHtml(v=''){return String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function escapeAttr(v=''){return escapeHtml(v).replace(/'/g,'&#39;')}
+function toggleAnalysisEdit(){$('analysisEdit').classList.toggle('hidden')}
+function updateAnalysisItem(idx,key,val){if(!currentAnalysis?.items?.[idx])return;currentAnalysis.items[idx][key]=['grams','kcal'].includes(key)?(+val||0):val;renderAnalysis();$('analysisEdit').classList.remove('hidden')}
+function removeAnalysisItem(idx){currentAnalysis.items.splice(idx,1);renderAnalysis();$('analysisEdit').classList.remove('hidden')}
+function saveAnalyzedMeal(){
+ if(!currentAnalysis){toast('Analyze the meal first');return}recalcAnalysis();
+ const detected=(currentAnalysis.items||[]).map(i=>({name:i.name,qty:`~${Math.round(+i.grams||0)} g`,kcal:Math.round(+i.kcal||0),info:i.info||''}));
+ addMeal({name:currentAnalysis.meal_name||'Scanned meal',kcal:currentAnalysis.calories||0,p:currentAnalysis.protein_g||0,c:currentAnalysis.carbs_g||0,f:currentAnalysis.fat_g||0,source:'scan',photo:currentPhoto,plateSize:$('plateSize').value,detected,confidence:currentAnalysis.confidence,createdAt:new Date().toISOString()});
+ currentPhoto='';currentAnalysis=null;$('cameraPhoto').value='';$('galleryPhoto').value='';$('preview').style.display='none';$('scanResult').classList.add('hidden');$('analysisStatus').textContent='';toast('Scan saved with photo');showScreen('home')
+}
 function addMeal(m){const meals=store.get('meals',[]);m.id=Date.now();m.date=localDateKey();m.createdAt=m.createdAt||new Date().toISOString();meals.push(m);try{store.set('meals',meals)}catch(e){m.photo='';try{store.set('meals',meals);toast('Meal saved, but photo storage is full')}catch(e2){toast('Could not save meal')}}}
 function todayMeals(){const d=localDateKey();return store.get('meals',[]).filter(m=>m.date===d)}
 function renderHome(){const ms=todayMeals();const sum=ms.reduce((a,m)=>({k:a.k+(+m.kcal||0),p:a.p+(+m.p||0),c:a.c+(+m.c||0),f:a.f+(+m.f||0)}),{k:0,p:0,c:0,f:0});$('homeKcal').textContent=Math.round(sum.k)+' kcal';$('homeP').textContent=Math.round(sum.p)+' g';$('homeC').textContent=Math.round(sum.c)+' g';$('homeF').textContent=Math.round(sum.f)+' g';$('mealCount').textContent=ms.length?`${ms.length} meal${ms.length>1?'s':''}`:'No meals yet';const all=store.get('meals',[]),rs=store.get('recipes',[]);$('savedStatus').textContent=`Saved on this device: ${all.length} meal${all.length===1?'':'s'} · ${rs.length} recipe${rs.length===1?'':'s'}`}
