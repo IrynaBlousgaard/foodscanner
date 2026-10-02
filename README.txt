@@ -1,12 +1,13 @@
-FoodScanner v0.8
+FoodScanner v0.9
 
 What's new
-- Five-tab navigation: Home / Scan / Diary / Track / Recipes.
-- Dedicated Track screen with calorie progress, KБЖУ/macros, calorie target and weight tracking.
-- Weight chart supports 7 days, 1 month, 3 months and all history.
-- Home meal cards are responsive on narrow iPhones; meal names no longer overlap calorie totals.
-- Diary keeps photo thumbnails, per-meal calories and expandable details.
-- Existing v0.7 data and IndexedDB photos remain compatible.
+- Added a calorie target calculator under Track > Daily calorie target.
+- Uses the Mifflin-St Jeor BMR equation plus selected activity level.
+- Choose maintain, slow loss, loss, or slow gain.
+- Shows estimated BMR, maintenance calories, and suggested daily target.
+- One tap applies the calculated value as the FoodScanner daily target.
+- Latest saved weight is prefilled automatically when available.
+- Existing meals, recipes, photos, targets, and weight history remain compatible.
 
 Deployment
-Replace the files in the existing GitHub FoodScanner repository with this folder. If Netlify is connected to that repository, each push to the production branch may trigger a Netlify production deploy.
+Replace the files in your existing GitHub FoodScanner repository with this folder when you are ready to deploy. Keep OPENAI_API_KEY only in Netlify environment variables.
