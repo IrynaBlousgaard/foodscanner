@@ -1,14 +1,15 @@
-FoodScanner v0.6
+FoodScanner v0.7
 
-Deploy the whole folder to Netlify/GitHub. Keep the existing Netlify environment variable:
-OPENAI_API_KEY
+What's new
+- Home dashboard updated to the cleaner mockup-inspired layout.
+- Bottom navigation: Home / Scan / Diary / Recipes.
+- Diary groups meals by day and shows the daily calorie total.
+- Each meal is compact by default: photo thumbnail, meal name, time and total calories.
+- Tap a meal to expand its saved photo, KBJU/macros, plate size, AI confidence and detected-food details.
+- Scan photos are now stored in IndexedDB instead of relying on localStorage, making photo retention much more reliable.
+- Backups include scan photos when available.
+- Existing v0.6 data remains compatible.
 
-New in v0.6:
-- Add missing foods manually after AI analysis
-- Edit calories and macros (protein/fat/carbs) per detected item
-- KBJU / macros display
-- Daily calorie target with consumed/remaining progress
-- Weight logging and trend chart
-- Loading spinner during AI analysis
-- New FoodScanner app icon + PWA manifest
-- Existing browser data remains on the same DATA_KEY and is migrated automatically
+Deployment
+Replace the existing GitHub project files with this folder and push once. Netlify should deploy automatically.
+Keep OPENAI_API_KEY in Netlify Environment variables; do not put it in GitHub.
