@@ -1,15 +1,12 @@
-FoodScanner v0.7
+FoodScanner v0.8
 
 What's new
-- Home dashboard updated to the cleaner mockup-inspired layout.
-- Bottom navigation: Home / Scan / Diary / Recipes.
-- Diary groups meals by day and shows the daily calorie total.
-- Each meal is compact by default: photo thumbnail, meal name, time and total calories.
-- Tap a meal to expand its saved photo, KBJU/macros, plate size, AI confidence and detected-food details.
-- Scan photos are now stored in IndexedDB instead of relying on localStorage, making photo retention much more reliable.
-- Backups include scan photos when available.
-- Existing v0.6 data remains compatible.
+- Five-tab navigation: Home / Scan / Diary / Track / Recipes.
+- Dedicated Track screen with calorie progress, KБЖУ/macros, calorie target and weight tracking.
+- Weight chart supports 7 days, 1 month, 3 months and all history.
+- Home meal cards are responsive on narrow iPhones; meal names no longer overlap calorie totals.
+- Diary keeps photo thumbnails, per-meal calories and expandable details.
+- Existing v0.7 data and IndexedDB photos remain compatible.
 
 Deployment
-Replace the existing GitHub project files with this folder and push once. Netlify should deploy automatically.
-Keep OPENAI_API_KEY in Netlify Environment variables; do not put it in GitHub.
+Replace the files in the existing GitHub FoodScanner repository with this folder. If Netlify is connected to that repository, each push to the production branch may trigger a Netlify production deploy.
