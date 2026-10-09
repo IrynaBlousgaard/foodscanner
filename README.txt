@@ -1,4 +1,4 @@
-FoodScanner v0.9
+FoodScanner v1.0
 
 What's new
 - Added a calorie target calculator under Track > Daily calorie target.
